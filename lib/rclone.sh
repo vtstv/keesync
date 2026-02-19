@@ -86,22 +86,47 @@ setup_rclone() {
     if rclone listremotes | grep -q "^${remote}:$"; then
         echo "✓ Remote '${remote}' already configured"
         read -p "Reconfigure? [y/N]: " reconfigure
-        if [[ "$reconfigure" != "y" ]]; then
-            return 0
-        else
+        if [[ "$reconfigure" =~ ^[Yy]$ ]]; then
             rclone config delete "$remote" 2>/dev/null || true
+        else
+            return 0
         fi
     fi
     
     echo "Setting up Google Drive authentication"
-    echo "Browser will open for authentication..."
     echo ""
-    read -p "Press Enter to continue..."
+    echo "Choose authentication method:"
+    echo "  1) Auto (browser opens automatically)"
+    echo "  2) Manual (interactive wizard)"
+    read -p "Select [1-2]: " auth_method
     
-    # Create config non-interactively with auto-auth
-    rclone config create "$remote" drive \
-        scope drive \
-        config_is_local false 2>&1 | grep -v "^20" || true
+    case "$auth_method" in
+        1)
+            echo ""
+            echo "Opening browser for authentication..."
+            
+            # Use authorize command to get token via browser
+            local auth_result=$(rclone authorize "drive" "drive" "scope=drive" 2>&1)
+            
+            if [[ -z "$auth_result" ]] || [[ "$auth_result" == *"error"* ]]; then
+                echo "✗ Auto authentication failed, falling back to manual..."
+                rclone config
+            else
+                # Create config with the token
+                rclone config create "$remote" drive \
+                    config_token "$auth_result" \
+                    scope drive
+            fi
+            ;;
+        2|*)
+            echo ""
+            echo "Starting interactive setup..."
+            echo "When prompted, name the remote: $remote"
+            echo ""
+            read -p "Press Enter to continue..."
+            rclone config
+            ;;
+    esac
     
     echo ""
     echo "Testing connection..."
@@ -109,9 +134,7 @@ setup_rclone() {
         echo "✓ Successfully connected to Google Drive!"
     else
         echo "✗ Failed to connect"
-        echo ""
-        echo "If authentication didn't work, try manual setup:"
-        echo "  rclone config"
+        echo "You can reconnect with: rclone config reconnect ${remote}:"
         return 1
     fi
 }
