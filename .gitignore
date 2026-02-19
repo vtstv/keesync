@@ -1,0 +1,5 @@
+*.kdbx
+*.kdbx.backup.*
+*.log
+config
+.DS_Store
