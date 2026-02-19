@@ -95,38 +95,24 @@ setup_rclone() {
     
     echo "Setting up Google Drive authentication"
     echo ""
-    echo "Choose authentication method:"
-    echo "  1) Auto (browser opens automatically)"
-    echo "  2) Manual (interactive wizard)"
-    read -p "Select [1-2]: " auth_method
+    echo "Follow these steps in the wizard:"
+    echo "  1. New remote: n"
+    echo "  2. Name: $remote"
+    echo "  3. Storage type: drive"
+    echo "  4. Client ID: [press Enter]"
+    echo "  5. Client secret: [press Enter]"
+    echo "  6. Scope: 1"
+    echo "  7. Root folder: [press Enter]"
+    echo "  8. Service account: [press Enter]"
+    echo "  9. Advanced config: n"
+    echo "  10. Auto config: y [browser opens]"
+    echo "  11. Team drive: n"
+    echo "  12. Confirm: y"
+    echo "  13. Quit: q"
+    echo ""
+    read -p "Press Enter to start..."
     
-    case "$auth_method" in
-        1)
-            echo ""
-            echo "Opening browser for authentication..."
-            
-            # Use authorize command to get token via browser
-            local auth_result=$(rclone authorize "drive" "drive" "scope=drive" 2>&1)
-            
-            if [[ -z "$auth_result" ]] || [[ "$auth_result" == *"error"* ]]; then
-                echo "✗ Auto authentication failed, falling back to manual..."
-                rclone config
-            else
-                # Create config with the token
-                rclone config create "$remote" drive \
-                    config_token "$auth_result" \
-                    scope drive
-            fi
-            ;;
-        2|*)
-            echo ""
-            echo "Starting interactive setup..."
-            echo "When prompted, name the remote: $remote"
-            echo ""
-            read -p "Press Enter to continue..."
-            rclone config
-            ;;
-    esac
+    rclone config
     
     echo ""
     echo "Testing connection..."
@@ -134,7 +120,7 @@ setup_rclone() {
         echo "✓ Successfully connected to Google Drive!"
     else
         echo "✗ Failed to connect"
-        echo "You can reconnect with: rclone config reconnect ${remote}:"
+        echo "You can try again or reconnect with: rclone config reconnect ${remote}:"
         return 1
     fi
 }

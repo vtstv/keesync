@@ -8,6 +8,9 @@ load_config() {
     if [[ -f "$CONFIG_FILE" ]]; then
         source "$CONFIG_FILE"
     fi
+    
+    # Set default for max backups if not configured
+    MAX_BACKUPS="${MAX_BACKUPS:-2}"
 }
 
 save_config() {
@@ -17,6 +20,7 @@ KEEPASS_LOCAL_PATH="$KEEPASS_LOCAL_PATH"
 KEEPASS_REMOTE_PATH="$KEEPASS_REMOTE_PATH"
 RCLONE_REMOTE="$RCLONE_REMOTE"
 SYNC_DIRECTION="$SYNC_DIRECTION"
+MAX_BACKUPS="${MAX_BACKUPS:-2}"
 EOF
     chmod 600 "$CONFIG_FILE"
 }
@@ -43,6 +47,10 @@ setup_config() {
     echo "  3) Download only (remote → local)"
     read -p "Choose [${SYNC_DIRECTION:-1}]: " input
     SYNC_DIRECTION="${input:-${SYNC_DIRECTION:-1}}"
+    
+    echo ""
+    read -p "Max number of local backups to keep [${MAX_BACKUPS:-2}]: " input
+    MAX_BACKUPS="${input:-${MAX_BACKUPS:-2}}"
     
     save_config
     echo ""

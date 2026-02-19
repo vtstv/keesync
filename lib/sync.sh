@@ -13,6 +13,23 @@ backup_local() {
         local backup="${KEEPASS_LOCAL_PATH}.backup.$(date +%Y%m%d_%H%M%S)"
         cp "$KEEPASS_LOCAL_PATH" "$backup"
         log_message "Created backup: $backup"
+        
+        # Rotate old backups
+        rotate_backups
+    fi
+}
+
+rotate_backups() {
+    local backup_pattern="${KEEPASS_LOCAL_PATH}.backup.*"
+    local backup_count=$(ls -1 ${backup_pattern} 2>/dev/null | wc -l)
+    local max_backups="${MAX_BACKUPS:-2}"
+    
+    if [[ $backup_count -gt $max_backups ]]; then
+        local to_delete=$((backup_count - max_backups))
+        ls -1t ${backup_pattern} 2>/dev/null | tail -n $to_delete | while read old_backup; do
+            rm -f "$old_backup"
+            log_message "Removed old backup: $old_backup"
+        done
     fi
 }
 

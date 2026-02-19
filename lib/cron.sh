@@ -42,7 +42,7 @@ check_cron() {
 
 get_cron_entry() {
     local schedule="$1"
-    local script_path="$(readlink -f "${SCRIPT_DIR}/sync-keepass.sh")"
+    local script_path="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/sync-keepass.sh"
     echo "${schedule} ${script_path} sync >> ${LOG_FILE} 2>&1 ${CRON_MARKER}"
 }
 
@@ -52,14 +52,29 @@ add_cron() {
     local schedule="$1"
     local entry="$(get_cron_entry "$schedule")"
     
-    (crontab -l 2>/dev/null | grep -v "$CRON_MARKER"; echo "$entry") | crontab -
+    echo "Adding cron entry: $entry"
+    
+    # Get existing crontab, remove old entries, add new one
+    local temp_cron=$(mktemp)
+    crontab -l 2>/dev/null | grep -v "$CRON_MARKER" > "$temp_cron" || true
+    echo "$entry" >> "$temp_cron"
+    crontab "$temp_cron"
+    rm -f "$temp_cron"
+    
     echo "✓ Cron job added: $schedule"
+    echo ""
+    echo "Verifying..."
+    crontab -l | grep "$CRON_MARKER"
 }
 
 remove_cron() {
     check_cron || return 1
     
-    crontab -l 2>/dev/null | grep -v "$CRON_MARKER" | crontab -
+    local temp_cron=$(mktemp)
+    crontab -l 2>/dev/null | grep -v "$CRON_MARKER" > "$temp_cron" || true
+    crontab "$temp_cron"
+    rm -f "$temp_cron"
+    
     echo "✓ Cron job removed"
 }
 
