@@ -93,25 +93,15 @@ setup_rclone() {
         fi
     fi
     
-    echo "Setting up rclone for Google Drive"
+    echo "Setting up Google Drive authentication"
+    echo "Browser will open for authentication..."
     echo ""
-    echo "This will open an interactive setup wizard."
-    echo "When prompted:"
-    echo "  1. Choose 'n' for new remote"
-    echo "  2. Name it: $remote"
-    echo "  3. Select 'drive' for Google Drive"
-    echo "  4. Press Enter to skip client_id/secret"
-    echo "  5. Choose scope 1 (full access)"
-    echo "  6. Press Enter for remaining options"
-    echo "  7. Choose 'y' for auto config (opens browser)"
-    echo "  8. Authenticate in browser"
-    echo "  9. Choose 'n' for team drive"
-    echo "  10. Choose 'y' to confirm"
-    echo "  11. Choose 'q' to quit config"
-    echo ""
-    read -p "Ready? Press Enter to start..."
+    read -p "Press Enter to continue..."
     
-    rclone config
+    # Create config non-interactively with auto-auth
+    rclone config create "$remote" drive \
+        scope drive \
+        config_is_local false 2>&1 | grep -v "^20" || true
     
     echo ""
     echo "Testing connection..."
@@ -119,7 +109,9 @@ setup_rclone() {
         echo "✓ Successfully connected to Google Drive!"
     else
         echo "✗ Failed to connect"
-        echo "Run setup again if needed"
+        echo ""
+        echo "If authentication didn't work, try manual setup:"
+        echo "  rclone config"
         return 1
     fi
 }
